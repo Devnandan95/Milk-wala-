@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Milkwala - दूध हिसाब</title>
+<style>
+:root{--green:#16794b;--light:#eef8f1;--ink:#17352a;--muted:#60736a;--line:#d9e7de}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f4f8f5;color:var(--ink)}
+header{background:linear-gradient(135deg,#11663d,#22965c);color:#fff;padding:24px 16px 28px}
+header .wrap,main{max-width:900px;margin:auto}
+h1{margin:0 0 5px;font-size:27px}header p{margin:0;opacity:.9}
+main{padding:16px}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:15px;box-shadow:0 3px 12px #12321a0b}
+h2{font-size:18px;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+input,select,button{font:inherit}
+input{width:100%;padding:11px;border:1px solid #cbdad0;border-radius:10px;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid #a7ddbc;border-color:var(--green)}
+.full{grid-column:1/-1}
+button{border:0;border-radius:10px;padding:11px 14px;cursor:pointer;font-weight:650}
+.primary{background:var(--green);color:white;width:100%;margin-top:14px}
+.secondary{background:var(--light);color:var(--green);border:1px solid #c6e4d0}
+.danger{background:#fff0ef;color:#a12b22}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{background:var(--light);border-radius:12px;padding:13px}
+.stat small{display:block;color:var(--muted);font-size:12px}
+.stat strong{display:block;font-size:20px;margin-top:4px;overflow-wrap:anywhere}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #e6eee8;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:650}
+.tablewrap{overflow-x:auto}
+.empty{color:var(--muted);text-align:center;padding:22px}
+.small{font-size:12px;color:var(--muted)}
+.amount{white-space:nowrap}
+@media(max-width:540px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}h1{font-size:24px}main{padding:12px}.panel{padding:13px}th,td{padding:9px 7px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>🥛 Milkwala</h1><p>दूध का रोज़ाना हिसाब — आपके मोबाइल में</p></div></header>
+<main>
+<section class="panel">
+<h2>नई दूध एंट्री जोड़ें</h2>
+<form id="entryForm">
+<div class="grid">
+<div><label for="customer">ग्राहक का नाम *</label><input id="customer" required placeholder="जैसे: राम जी"></div>
+<div><label for="phone">मोबाइल नंबर (वैकल्पिक)</label><input id="phone" inputmode="tel" placeholder="मोबाइल नंबर"></div>
+<div><label for="date">तारीख *</label><input id="date" type="date" required></div>
+<div><label for="litres">दूध (लीटर) *</label><input id="litres" type="number" min="0.1" step="0.1" required placeholder="जैसे: 2"></div>
+<div><label for="rate">रेट (₹ प्रति लीटर) *</label><input id="rate" type="number" min="0" step="0.01" required value="60"></div>
+<div><label for="paid">जमा पैसे (₹)</label><input id="paid" type="number" min="0" step="0.01" value="0"></div>
+<div class="full"><label for="note">नोट (वैकल्पिक)</label><input id="note" placeholder="जैसे: सुबह का दूध"></div>
+</div>
+<button class="primary" type="submit">+ हिसाब सेव करें</button>
+</form>
+</section>
+<section class="panel">
+<h2>कुल हिसाब</h2>
+<div class="stats">
+<div class="stat"><small>कुल दूध</small><strong id="totalLitres">0 L</strong></div>
+<div class="stat"><small>कुल रकम</small><strong id="totalAmount">₹0</strong></div>
+<div class="stat"><small>बाकी रकम</small><strong id="totalDue">₹0</strong></div>
+</div>
+</section>
+<section class="panel">
+<h2>दूध की एंट्री</h2>
+<div class="tools">
+<input id="search" placeholder="नाम या मोबाइल से खोजें" style="flex:1;min-width:180px">
+<button class="secondary" id="exportBtn" type="button">CSV डाउनलोड</button>
+<button class="danger" id="clearBtn" type="button">सारा डेटा मिटाएँ</button>
+</div>
+<div class="tablewrap">
+<table>
+<thead><tr><th>तारीख / ग्राहक</th><th>लीटर × रेट</th><th>कुल</th><th>जमा</th><th>बाकी</th><th>हटाएँ</th></tr></thead>
+<tbody id="entries"></tbody>
+</table>
+<div id="empty" class="empty">अभी कोई एंट्री नहीं है। ऊपर से पहली एंट्री जोड़ें।</div>
+</div>
+<p class="small">डेटा इसी ब्राउज़र/मोबाइल में सेव होता है। ब्राउज़र का डेटा मिटाने पर हिसाब मिट सकता है, इसलिए समय-समय पर CSV डाउनलोड कर लें।</p>
+</section>
+</main>
+<script>
+const KEY='milkwala_entries_v1';
+const $=id=>document.getElementById(id);
+let entries=[];
+try{entries=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(entries))entries=[];}catch(e){entries=[];}
+$('date').value=new Date().toLocaleDateString('en-CA');
+function money(n){return '₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2});}
+function save(){localStorage.setItem(KEY,JSON.stringify(entries));render();}
+$('entryForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const litres=Number($('litres').value),rate=Number($('rate').value),paid=Number($('paid').value||0);
+ if(!Number.isFinite(litres)||litres<=0||rate<0||paid<0){alert('कृपया सही मात्रा और रकम भरें।');return;}
+ entries.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),customer:$('customer').value.trim(),phone:$('phone').value.trim(),date:$('date').value,litres,rate,paid,note:$('note').value.trim()});
+ save();$('entryForm').reset();$('date').value=new Date().toLocaleDateString('en-CA');$('rate').value='60';$('paid').value='0';$('customer').focus();
+});
+$('search').addEventListener('input',render);
+function render(){
+ const totalLitres=entries.reduce((s,x)=>s+Number(x.litres||0),0);
+ const total=entries.reduce((s,x)=>s+Number(x.litres||0)*Number(x.rate||0),0);
+ const paid=entries.reduce((s,x)=>s+Number(x.paid||0),0);
+ $('totalLitres').textContent=totalLitres.toLocaleString('en-IN',{maximumFractionDigits:2})+' L';
+ $('totalAmount').textContent=money(total);$('totalDue').textContent=money(total-paid);
+ const q=$('search').value.trim().toLowerCase();
+ const shown=entries.filter(x=>(x.customer+' '+x.phone).toLowerCase().includes(q));
+ $('entries').innerHTML='';
+ shown.forEach(x=>{
+  const amount=Number(x.litres)*Number(x.rate),due=amount-Number(x.paid||0);
+  const tr=document.createElement('tr');
+  const vals=[`${x.date||''}\n${x.customer}${x.phone?'\n'+x.phone:''}${x.note?'\n'+x.note:''}`,`${x.litres} L × ${money(x.rate)}`,money(amount),money(x.paid),money(due)];
+  vals.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;td.style.whiteSpace=i===0?'pre-line':'normal';if(i>0)td.classList.add('amount');tr.appendChild(td);});
+  const td=document.createElement('td'),btn=document.createElement('button');btn.className='danger';btn.textContent='हटाएँ';btn.type='button';btn.onclick=()=>{if(confirm('यह एंट्री हटाएँ?')){entries=entries.filter(y=>y.id!==x.id);save();}};td.appendChild(btn);tr.appendChild(td);$('entries').appendChild(tr);
+ });
+ $('empty').style.display=shown.length?'none':'block';
+}
+$('exportBtn').addEventListener('click',()=>{
+ if(!entries.length){alert('डाउनलोड करने के लिए कोई एंट्री नहीं है।');return;}
+ const rows=[['तारीख','ग्राहक','मोबाइल','लीटर','रेट','कुल रकम','जमा','बाकी','नोट'],...entries.map(x=>[x.date,x.customer,x.phone,x.litres,x.rate,(Number(x.litres)*Number(x.rate)).toFixed(2),x.paid,(Number(x.litres)*Number(x.rate)-Number(x.paid||0)).toFixed(2),x.note||''])];
+ const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='milkwala-hisab.csv';a.click();URL.revokeObjectURL(url);
+});
+$('clearBtn').addEventListener('click',()=>{if(confirm('सारा हिसाब हमेशा के लिए मिटाना है? पहले CSV डाउनलोड कर लें।')){entries=[];save();}});
+render();
+</script>
+</body>
+</html>
